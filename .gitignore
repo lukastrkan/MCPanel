@@ -1,0 +1,6 @@
+minecraft/*
+.vs/
+temp/*
+backup/*
+bin/
+obj/

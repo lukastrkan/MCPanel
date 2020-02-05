@@ -1,0 +1,43 @@
+﻿    
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    List<string> list = ViewBag.list;
+}
+
+<h1>Console</h1>
+
+    <input type="button" value="Start" onclick="start()"/>
+    <input type="button" value="Stop" onclick="stop()"/>
+    <input type="button" value="Restart" onclick="restart()"/>
+
+
+
+
+<div id="textbox" style="height:450px;width:100%;border:1px solid #ccc;font:16px/26px Georgia, Garamond, Serif;overflow:auto; background-color:black; word-wrap: break-word;">
+    @foreach (var r in list)
+    {
+        string color;
+        if (r.Contains("WARN"))
+        {
+            color = "orange";
+        }
+        else if (r.Contains("ERROR"))
+        {
+            color = "red";
+        }
+        else
+        {
+            color = "white";
+        }
+        <span style="color: @color;">@r</span><br />
+    }
+</div>
+<input type="text" name="command" id="command" />
+<button onclick="send()">Execute</button>
+<script src="~/js/signalr/dist/browser/signalr.js"></script>
+<script src="~/js/console.js"></script>
+<script>
+    let obj = document.getElementById("textbox");
+    obj.scrollTop = obj.scrollHeight;
+</script>
