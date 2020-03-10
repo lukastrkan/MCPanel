@@ -29,7 +29,7 @@ namespace MCPanel.Controllers
         public async Task<IActionResult> Console()
         {
             List<string> list = new List<string>();
-            if (minecraftService.IsRunning() && System.IO.File.Exists("minecraft/logs/latest.log"))
+            if (System.IO.File.Exists("minecraft/logs/latest.log"))
             {
                 using (var fs = new FileStream("minecraft/logs/latest.log", FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {

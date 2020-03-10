@@ -31,8 +31,9 @@ namespace MCPanel.Services
             process.ErrorDataReceived += new DataReceivedEventHandler(OutputHandler);
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                process.StartInfo.WorkingDirectory = "minecraft";
+                process.StartInfo.WorkingDirectory = "./minecraft";
                 process.StartInfo.FileName = "start.bat";
+                Console.WriteLine(Directory.GetCurrentDirectory());
                     
             }
             else if(RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
@@ -52,8 +53,7 @@ namespace MCPanel.Services
             if(process.ExitCode != 0)
             {
                 consoleHub.SendConsole("Server crashed", "red");
-                Thread.Sleep(2000);
-                StartServer();
+                Thread.Sleep(2000);                
             }
             else
             {
@@ -113,6 +113,7 @@ namespace MCPanel.Services
         {
             //RecurringJob.RemoveIfExists("backup");
             process.StandardInput.WriteLine("stop");
+            Thread.Sleep(10000);            
         }
 
         public void RestartServer()
