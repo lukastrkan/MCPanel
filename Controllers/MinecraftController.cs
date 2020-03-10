@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using MCPanel.Services;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MCPanel.Controllers
@@ -13,16 +14,19 @@ namespace MCPanel.Controllers
     public class MinecraftController : Controller
     {
         readonly IMinecraftService minecraftService;
+        readonly UserManager<ApplicationUser> _userManager;
         
-        public MinecraftController(IMinecraftService m)
+        public MinecraftController(IMinecraftService m, UserManager<ApplicationUser> um)
         {
-            minecraftService = m;            
+            minecraftService = m;      
+            _userManager = um;
         }
         
         [Route("/")]
+        [ActionName("index")]
         public async Task<IActionResult> Index()
         {            
-            return View();
+            return View();           
         }
 
         [Route("console")]

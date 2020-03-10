@@ -16,6 +16,8 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using MCPanel.Services;
 using MCPanel.Hubs;
 using Hangfire;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc.Authorization;
 
 namespace MCPanel
 {
@@ -51,6 +53,13 @@ namespace MCPanel
             services.AddHostedService<AutoBackupService>();
             services.AddTransient<IBackupService, BackupService>();
             services.AddHostedService<DataReportService>();
+            services.AddControllers(config =>
+            {
+                var policy = new AuthorizationPolicyBuilder()
+                                 .RequireAuthenticatedUser()
+                                 .Build();
+                config.Filters.Add(new AuthorizeFilter(policy));
+            });
 
 
             //GlobalConfiguration.Configuration.UseSqlServerStorage(@"Server=./SQLEXPRESS; Database=Hangfire.Sample; Integrated Security=True");
