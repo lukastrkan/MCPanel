@@ -18,6 +18,7 @@ using MCPanel.Hubs;
 using Hangfire;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Authorization;
+using Hangfire.SqlServer;
 
 namespace MCPanel
 {
@@ -34,7 +35,7 @@ namespace MCPanel
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlServer(
+                 options.UseSqlServer(
                     Configuration.GetConnectionString("DefaultConnection")));
             services.AddIdentity<ApplicationUser, ApplicationRole>(options => {
                 options.SignIn.RequireConfirmedAccount = false;
@@ -49,8 +50,7 @@ namespace MCPanel
             services.AddTransient<IMinecraftService, MinecraftService>();
             services.AddSignalR();
             services.AddSingleton<ConsoleHub, ConsoleHub>();
-            services.AddSingleton<ControlHub, ControlHub>();
-            services.AddHostedService<AutoBackupService>();
+            services.AddSingleton<ControlHub, ControlHub>();            
             services.AddTransient<IBackupService, BackupService>();
             services.AddHostedService<DataReportService>();
             services.AddControllers(config =>
@@ -62,11 +62,25 @@ namespace MCPanel
             });
 
 
-            //GlobalConfiguration.Configuration.UseSqlServerStorage(@"Server=./SQLEXPRESS; Database=Hangfire.Sample; Integrated Security=True");
+            services.AddHangfire(configuration => configuration
+        .SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
+        .UseSimpleAssemblyNameTypeSerializer()
+        .UseRecommendedSerializerSettings()
+        .UseSqlServerStorage(Configuration.GetConnectionString("DefaultConnection"), new SqlServerStorageOptions
+        {
+            CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
+            SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+            QueuePollInterval = TimeSpan.Zero,
+            UseRecommendedIsolationLevel = true,
+            UsePageLocksOnDequeue = true,
+            DisableGlobalLocks = true
+        }));
+            services.AddHangfireServer();
         }
 
+        
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IBackgroundJobClient backgroundJobs)
         {
             if (env.IsDevelopment())
             {
@@ -86,7 +100,8 @@ namespace MCPanel
 
             app.UseAuthentication();
             app.UseAuthorization();
-
+            app.UseHangfireDashboard();
+            RecurringJob.RemoveIfExists("backup");
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllerRoute(

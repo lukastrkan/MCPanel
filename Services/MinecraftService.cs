@@ -13,9 +13,11 @@ namespace MCPanel.Services
 {
     public class MinecraftService : IMinecraftService
     {
-        public MinecraftService(ConsoleHub ch)
+        readonly IBackupService backupService;
+        public MinecraftService(ConsoleHub ch, IBackupService bs)
         {            
-            consoleHub = ch;                              
+            consoleHub = ch;
+            backupService = bs;
         }
                 
         readonly ConsoleHub consoleHub;        
@@ -44,12 +46,15 @@ namespace MCPanel.Services
             process.StartInfo.RedirectStandardInput = true;
             process.StartInfo.UseShellExecute = false;
             process.StartInfo.RedirectStandardOutput = true;
-            process.StartInfo.RedirectStandardError = true;            
+            process.StartInfo.RedirectStandardError = true;
+            RecurringJob.AddOrUpdate("backup", () => Backup(), Cron.MinuteInterval(30));
+            
         }
 
         private void Exited(object sender, EventArgs e)
         {            
-            consoleHub.IsRunning();            
+            consoleHub.IsRunning();
+            RecurringJob.RemoveIfExists("backup");
             if(process.ExitCode != 0)
             {
                 consoleHub.SendConsole("Server crashed", "red");
@@ -145,6 +150,18 @@ namespace MCPanel.Services
             catch
             {
                 return false;
+            }
+        }
+
+        public void Backup()
+        {
+            if (IsRunning())
+            {
+                Execute("tellraw @a {\"text\": \"Server is going to backuped. You may experience some lag.\", \"color\": \"red\"}");
+                Execute("save-all");
+                Execute("save-off");
+                backupService.Backup();
+                Execute("save-on");
             }
         }
     }
