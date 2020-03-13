@@ -8,6 +8,14 @@
   <ItemGroup>
     <Compile Remove="Data\Migrations\20200311204027_first.cs" />
     <Compile Remove="Data\Migrations\20200311204027_first.Designer.cs" />
+    <Compile Remove="Data\Migrations\20200313170310_Backups.cs" />
+    <Compile Remove="Data\Migrations\20200313170310_Backups.Designer.cs" />
+    <Compile Remove="Data\Migrations\20200313192028_Build.cs" />
+    <Compile Remove="Data\Migrations\20200313192028_Build.Designer.cs" />
+    <Compile Remove="Data\Migrations\20200313192533_Build.cs" />
+    <Compile Remove="Data\Migrations\20200313192533_Build.Designer.cs" />
+    <Compile Remove="Data\Migrations\20200313192600_Backup.cs" />
+    <Compile Remove="Data\Migrations\20200313192600_Backup.Designer.cs" />
   </ItemGroup>
 
 
@@ -19,6 +27,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="3.1.2" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="3.1.2" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="3.1.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="3.1.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="3.1.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="3.1.2">
       <PrivateAssets>all</PrivateAssets>

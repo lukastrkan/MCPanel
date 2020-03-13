@@ -1,124 +1,87 @@
-﻿using MCPanel.Hubs;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Diagnostics;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Hangfire;
+using MCPanel.Hubs;
 
 namespace MCPanel.Services
 {
     public class MinecraftService : IMinecraftService
     {
-        readonly IBackupService backupService;
+        private static Process _process;
+        private readonly IBackupService _backupService;
+        private readonly ConsoleHub _consoleHub;
+
         public MinecraftService(ConsoleHub ch, IBackupService bs)
-        {            
-            consoleHub = ch;
-            backupService = bs;
+        {
+            _consoleHub = ch;
+            _backupService = bs;
         }
-                
-        readonly ConsoleHub consoleHub;        
-        static Process process;
-        static bool setup = false;
-        public static bool Running = false;
+
         public void SetupProcess()
         {
-            process = new Process();
-            process.EnableRaisingEvents = true;
-            process.Exited += new EventHandler(Exited);            
-            process.OutputDataReceived += new DataReceivedEventHandler(OutputHandler);
-            process.ErrorDataReceived += new DataReceivedEventHandler(OutputHandler);
+            _process = new Process
+            {
+                EnableRaisingEvents = true
+            };
+            _process.Exited += Exited;
+            _process.OutputDataReceived += OutputHandler;
+            _process.ErrorDataReceived += OutputHandler;
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                process.StartInfo.WorkingDirectory = "./minecraft";
-                process.StartInfo.FileName = "start.bat";
+                _process.StartInfo.WorkingDirectory = "./minecraft";
+                //_process.StartInfo.FileName = "start.bat";
+                _process.StartInfo.FileName = "java";
+                _process.StartInfo.Arguments = "-Xms1024M -Xmx2048M -jar server.jar nogui";
                 Console.WriteLine(Directory.GetCurrentDirectory());
-                    
             }
-            else if(RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                process.StartInfo.FileName = "/bin/bash";
-                process.StartInfo.Arguments = "-c \"cd minecraft && ./start.sh\"";
-            }            
-            process.StartInfo.RedirectStandardInput = true;
-            process.StartInfo.UseShellExecute = false;
-            process.StartInfo.RedirectStandardOutput = true;
-            process.StartInfo.RedirectStandardError = true;
+                _process.StartInfo.FileName = "java";
+                _process.StartInfo.Arguments = "-Xms1024M -Xmx2048M -jar server.jar nogui";
+            }
+
+            _process.StartInfo.RedirectStandardInput = true;
+            _process.StartInfo.UseShellExecute = false;
+            _process.StartInfo.RedirectStandardOutput = true;
+            _process.StartInfo.RedirectStandardError = true;
             RecurringJob.AddOrUpdate("backup", () => Backup(), Cron.MinuteInterval(30));
-            
-        }
-
-        private void Exited(object sender, EventArgs e)
-        {            
-            consoleHub.IsRunning();
-            RecurringJob.RemoveIfExists("backup");
-            if(process.ExitCode != 0)
-            {
-                consoleHub.SendConsole("Server crashed", "red");
-                Thread.Sleep(2000);                
-            }
-            else
-            {
-                consoleHub.SendConsole("Server stopped", "pink");
-                Thread.Sleep(2000);
-                StopProcess();
-            }
-            
-        }
-                
-
-        private async void OutputHandler(object sendingProcess, DataReceivedEventArgs outLine)
-        {            
-            await consoleHub.SendConsole(outLine.Data);
-            if (outLine.Data == null)
-            {
-                return;
-            }
-            else if (outLine.Data.Contains("Stopping server"))
-            {
-                Running = false;                
-                await consoleHub.SendConsole("Stopping server", "pink");                
-                //StopProcess();
-            }
-            else if (outLine.Data.Contains("For help, type \"help\"") && outLine.Data.Contains("Done"))
-            {
-                Running = true;
-            }
-        }
-
-        void StopProcess()
-        {           
-            //process.CancelErrorRead();
-            //process.CancelOutputRead();            
-            //process.WaitForExit();
-            process.Dispose();
-            //consoleHub.IsRunning();
         }
 
         public void Execute(string command)
-        {            
-            process.StandardInput.WriteLine(command);                     
+        {
+            _process.StandardInput.WriteLine(command);
         }
 
         public void StartServer()
         {
             SetupProcess();
-            process.Start();
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
-            consoleHub.SendConsole("Server started", "green");
-            consoleHub.IsRunning();
-           // RecurringJob.AddOrUpdate(recurringJobId: "backup", () => Console.WriteLine("Recurring!"), Cron.Minutely);
+            _process.Start();
+            _process.BeginOutputReadLine();
+            _process.BeginErrorReadLine();
+            _consoleHub.SendConsole("Server started", "green");
+            _consoleHub.IsRunning();
         }
 
         public void StopServer()
         {
-            //RecurringJob.RemoveIfExists("backup");
-            process.StandardInput.WriteLine("stop");
-            Thread.Sleep(10000);            
+            _process.StandardInput.WriteLine("stop");
+            var jobId = BackgroundJob.Schedule(() => KillServer(), TimeSpan.FromSeconds(20));
+        }
+
+        public void KillServer()
+        {
+            if (_process == null)
+            {
+                return;
+            }
+            if (IsRunning())
+            {
+                _process.Kill();
+                Console.WriteLine("killed");
+            }
         }
 
         public void RestartServer()
@@ -128,24 +91,60 @@ namespace MCPanel.Services
             StartServer();
         }
 
-        public static bool IsRunning()
+        bool IMinecraftService.IsRunning()
         {
             try
             {
-                return !process.HasExited;
+                return !_process.HasExited;
             }
             catch
             {
                 return false;
             }
-            
         }
 
-        bool IMinecraftService.IsRunning()
+        private void Exited(object sender, EventArgs e)
+        {
+            RecurringJob.RemoveIfExists("backup");
+            if (_process.ExitCode != 0)
+            {
+                _consoleHub.SendConsole("Server crashed", "red");
+            }
+            else
+            {
+                _consoleHub.SendConsole("Server stopped", "pink");
+                StopProcess();
+            }
+        }
+
+
+        private async void OutputHandler(object sendingProcess, DataReceivedEventArgs outLine)
+        {
+            await _consoleHub.SendConsole(outLine.Data);
+            if (outLine.Data == null)
+            {
+
+            }
+            else if (outLine.Data.Contains("Stopping server"))
+            {
+                await _consoleHub.SendConsole("Stopping server", "pink");
+            }
+            else if (outLine.Data.Contains("For help, type \"help\"") && outLine.Data.Contains("Done"))
+            {
+                
+            }
+        }
+
+        private void StopProcess()
+        {
+            _process.Dispose();
+        }
+
+        public static bool IsRunning()
         {
             try
             {
-                return !process.HasExited;
+                return !_process.HasExited;
             }
             catch
             {
@@ -160,10 +159,9 @@ namespace MCPanel.Services
                 Execute("tellraw @a {\"text\": \"Server is going to backuped. You may experience some lag.\", \"color\": \"red\"}");
                 Execute("save-all");
                 Execute("save-off");
-                backupService.Backup();
+                _backupService.Backup();
                 Execute("save-on");
             }
         }
     }
-
 }

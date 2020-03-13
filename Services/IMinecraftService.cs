@@ -13,5 +13,6 @@ namespace MCPanel.Services
         void StopServer();
         void RestartServer();
         bool IsRunning();
+        public void Backup();
     }
 }
