@@ -35,7 +35,6 @@ namespace MCPanel.Services
                 //_process.StartInfo.FileName = "start.bat";
                 _process.StartInfo.FileName = "java";
                 _process.StartInfo.Arguments = "-Xms1024M -Xmx2048M -jar server.jar nogui";
-                Console.WriteLine(Directory.GetCurrentDirectory());
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
@@ -47,7 +46,6 @@ namespace MCPanel.Services
             _process.StartInfo.UseShellExecute = false;
             _process.StartInfo.RedirectStandardOutput = true;
             _process.StartInfo.RedirectStandardError = true;
-            RecurringJob.AddOrUpdate("backup", () => Backup(), Cron.MinuteInterval(30));
         }
 
         public void Execute(string command)
@@ -93,13 +91,13 @@ namespace MCPanel.Services
 
         bool IMinecraftService.IsRunning()
         {
-            try
-            {
-                return !_process.HasExited;
-            }
-            catch
+            if (_process == null)
             {
                 return false;
+            }
+            else
+            {
+                return !_process.HasExited;
             }
         }
 
@@ -131,7 +129,7 @@ namespace MCPanel.Services
             }
             else if (outLine.Data.Contains("For help, type \"help\"") && outLine.Data.Contains("Done"))
             {
-                
+                RecurringJob.AddOrUpdate("backup", () => Backup(), Cron.MinuteInterval(30));
             }
         }
 
@@ -162,6 +160,11 @@ namespace MCPanel.Services
                 _backupService.Backup();
                 Execute("save-on");
             }
+        }
+
+        public static void Stop()
+        {
+            Stop();
         }
     }
 }

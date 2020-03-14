@@ -4,3 +4,5 @@ temp/*
 backup/*
 bin/
 obj/
+appsettings.json
+appsetting.Development.json

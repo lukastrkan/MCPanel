@@ -22,6 +22,7 @@ namespace MCPanel
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
+            
         }
 
         public IConfiguration Configuration { get; }
@@ -75,8 +76,9 @@ namespace MCPanel
 
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IBackgroundJobClient backgroundJobs)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IBackgroundJobClient backgroundJobs, IHostApplicationLifetime applicationLifetime)
         {
+            applicationLifetime.ApplicationStopping.Register(OnShutdown);
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -107,6 +109,15 @@ namespace MCPanel
                 endpoints.MapHub<ConsoleHub>("/signalr/console");
                 endpoints.MapHub<ControlHub>("/signalr/control");
             });
+        }
+
+        void OnShutdown() 
+        {
+            Console.WriteLine("Application is shutting down");
+            if (MinecraftService.IsRunning())
+            {
+                MinecraftService.Stop();
+            }
         }
     }
 }
