@@ -1,6 +1,7 @@
 using System;
 using Hangfire;
-using Hangfire.SqlServer;
+using Hangfire.Dashboard;
+using Hangfire.PostgreSql;
 using MCPanel.Data;
 using MCPanel.Hubs;
 using MCPanel.Services;
@@ -22,7 +23,6 @@ namespace MCPanel
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
-            
         }
 
         public IConfiguration Configuration { get; }
@@ -31,7 +31,7 @@ namespace MCPanel
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlServer(
+                options.UseNpgsql(
                     Configuration.GetConnectionString("DefaultConnection")));
             services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
             {
@@ -62,23 +62,16 @@ namespace MCPanel
                 .SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
                 .UseSimpleAssemblyNameTypeSerializer()
                 .UseRecommendedSerializerSettings()
-                .UseSqlServerStorage(Configuration.GetConnectionString("DefaultConnection"), new SqlServerStorageOptions
-                {
-                    CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
-                    SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
-                    QueuePollInterval = TimeSpan.Zero,
-                    UseRecommendedIsolationLevel = true,
-                    UsePageLocksOnDequeue = true,
-                    DisableGlobalLocks = true
-                }));
+                .UsePostgreSqlStorage(Configuration.GetConnectionString("DefaultConnection")));
             services.AddHangfireServer();
         }
 
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IBackgroundJobClient backgroundJobs, IHostApplicationLifetime applicationLifetime)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IBackgroundJobClient backgroundJobs, IHostApplicationLifetime applicationLifetime, ApplicationDbContext context)
         {
-            applicationLifetime.ApplicationStopping.Register(OnShutdown);
+            context.Database.Migrate();
+            applicationLifetime.ApplicationStopped.Register(OnShutdown);
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -98,7 +91,10 @@ namespace MCPanel
 
             app.UseAuthentication();
             app.UseAuthorization();
-            app.UseHangfireDashboard();
+            app.UseHangfireDashboard("/hangfire", new DashboardOptions
+            {
+                //IsReadOnlyFunc = (DashboardContext context) => true
+            });
             RecurringJob.RemoveIfExists("backup");
             app.UseEndpoints(endpoints =>
             {

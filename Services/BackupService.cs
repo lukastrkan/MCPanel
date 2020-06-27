@@ -34,10 +34,53 @@ namespace MCPanel.Services
             }
             string filename = $"./backup/backup-{DateTime.Now.ToString("dd-MM-yyyy-HHmm")}.zip";
             ZipFile.CreateFromDirectory(DestinationPath, filename, CompressionLevel.Optimal, true);
-            _context.Backups.Add(new Backup
+            var last = _context.Backups.Where(x => x.Type == BackupType.LongTerm).OrderByDescending(x => x.Id).Take(1).ToList();
+            var backup = new Backup();
+            backup.Filename = filename;
+            if (last.Count > 0)
             {
-                Filename = filename
-            });
+                var time = last[0].DateTime;
+                var diff = (DateTime.Now - time).TotalHours;
+                if (diff >= 1)
+                {
+                    backup.Type = BackupType.LongTerm;
+                }
+            }
+            else
+            {
+                backup.Type = BackupType.LongTerm;
+            }
+
+            _context.Backups.Add(backup);
+            var longterm = _context.Backups.Where(x => x.Type == BackupType.LongTerm);
+            var longtermCount = longterm.Count();
+            if (longtermCount >= 7)
+            {
+                var toDelete = longterm.OrderBy(x => x.Id).Take(longtermCount - 7);
+                foreach(var t in toDelete)
+                {
+                    if (File.Exists(t.Filename))
+                    {
+                        File.Delete(t.Filename);
+                    }
+                    _context.Remove(t);
+                }
+            }
+
+            var normal = _context.Backups.Where(x => x.Type == BackupType.LongTerm);
+            var normalCount = normal.Count();
+            if (normalCount >= 24)
+            {
+                var toDelete = normal.OrderBy(x => x.Id).Take(normalCount - 24);
+                foreach (var t in toDelete)
+                {
+                    if (File.Exists(t.Filename))
+                    {
+                        File.Delete(t.Filename);
+                    }
+                    _context.Remove(t);
+                }
+            }
             _context.SaveChanges();
         }
 

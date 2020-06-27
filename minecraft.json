@@ -1,0 +1,8 @@
+{
+  //min 1
+  "backup_interval": 1,
+  "backups_to_keep": 24,
+  "lt_backup_interval": 12,
+  "lt_backup_to_keep": 14
+
+}

@@ -129,7 +129,7 @@ namespace MCPanel.Services
             }
             else if (outLine.Data.Contains("For help, type \"help\"") && outLine.Data.Contains("Done"))
             {
-                RecurringJob.AddOrUpdate("backup", () => Backup(), Cron.MinuteInterval(30));
+                RecurringJob.AddOrUpdate("backup", () => Backup(), Cron.Hourly);
             }
         }
 

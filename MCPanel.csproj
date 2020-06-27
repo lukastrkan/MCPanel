@@ -6,28 +6,21 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Data\Migrations\20200311204027_first.cs" />
-    <Compile Remove="Data\Migrations\20200311204027_first.Designer.cs" />
-    <Compile Remove="Data\Migrations\20200313170310_Backups.cs" />
-    <Compile Remove="Data\Migrations\20200313170310_Backups.Designer.cs" />
-    <Compile Remove="Data\Migrations\20200313192028_Build.cs" />
-    <Compile Remove="Data\Migrations\20200313192028_Build.Designer.cs" />
-    <Compile Remove="Data\Migrations\20200313192533_Build.cs" />
-    <Compile Remove="Data\Migrations\20200313192533_Build.Designer.cs" />
-    <Compile Remove="Data\Migrations\20200313192600_Backup.cs" />
-    <Compile Remove="Data\Migrations\20200313192600_Backup.Designer.cs" />
+    <Compile Remove="Migrations\20200314111402_iit.cs" />
+    <Compile Remove="Migrations\20200314111402_iit.Designer.cs" />
+    <Compile Remove="Migrations\20200314112320_test.cs" />
+    <Compile Remove="Migrations\20200314112320_test.Designer.cs" />
   </ItemGroup>
 
 
   <ItemGroup>
     <PackageReference Include="Hangfire" Version="1.7.9" />
-    <PackageReference Include="Hangfire.Core" Version="1.7.*" />
-    <PackageReference Include="Hangfire.SqlServer" Version="1.7.*" />
-    <PackageReference Include="Hangfire.AspNetCore" Version="1.7.*" />
+    <PackageReference Include="Hangfire.Core" Version="1.7.9" />
+    <PackageReference Include="Hangfire.AspNetCore" Version="1.7.9" />
+    <PackageReference Include="Hangfire.PostgreSql" Version="1.6.4.1" />
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="3.1.2" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="3.1.2" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="3.1.2" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="3.1.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="3.1.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="3.1.2">
       <PrivateAssets>all</PrivateAssets>
@@ -36,6 +29,7 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="3.1.2" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.1.1" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="3.1.2" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL.Design" Version="1.1.0" />
     <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="4.7.0" />
   </ItemGroup>
 
